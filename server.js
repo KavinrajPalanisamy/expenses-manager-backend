@@ -12,7 +12,9 @@ process.on('unhandledRejection', (err) => {
 const express = require('express');
 const app = express();
 const PORT = process.env.PORT || 3000;
+const requestTraceMiddleware = require('./middlewares/requestTrace');
 
+app.use(requestTraceMiddleware);
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
@@ -29,6 +31,18 @@ app.use('/', statusCheck);
 
 app.use((req, res) => {
   res.status(404).json({ error: 'Not found' });
+});
+
+app.use((error, req, res, next) => {
+  logger.error(error, 'Unhandled request error');
+
+  if (res.headersSent) {
+    return next(error);
+  }
+
+  res.status(500).json({
+    error: process.env.ENV_CONFIG === 'PROD' ? 'Internal server error' : error.message
+  });
 });
 
 async function startServer() {
