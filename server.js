@@ -1,44 +1,21 @@
 require('dotenv').config({ quiet: true });
 const express = require('express');
-
 const app = express();
 const PORT = process.env.PORT || 3000;
-
-const { connectDatabase, dbConnection } = require('./config/dbConfig');
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-app.get("/health", (req, res) => {
-  res.json({
-    status: "ok",
-    uptime: `${Math.floor(process.uptime())}s`,
-    timestamp: new Date().toISOString()
-  });
-});
+const { connectDatabase } = require('./config/dbConfig');
 
-app.get('/db-health', async (req, res) => {
-  try {
-    await dbConnection.query('SELECT 1');
 
-    res.json({
-      status: 'ok',
-      database: 'reachable',
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    res.status(503).json({
-      status: 'error',
-      database: 'unreachable',
-      error: error.message,
-      timestamp: new Date().toISOString()
-    });
-  }
-});
+// Import Routes
+const statusCheck = require('./routes/healthCheck');
 
-app.get('/', (req, res) => {
-  res.json({ message: 'Node.js server is running' });
-});
+
+// Assign Routes Path
+app.use('/app', statusCheck);
+
 
 app.use((req, res) => {
   res.status(404).json({ error: 'Not found' });
