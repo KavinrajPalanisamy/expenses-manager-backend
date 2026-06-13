@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const logger = require('../utils/logger');
 
-const { dbConnection } = require('../config/dbConfig');
+const { dbConnection, sequelize } = require('../config/dbConfig');
 
 router.get("/health", (req, res) => {
   res.json({
@@ -14,7 +14,10 @@ router.get("/health", (req, res) => {
 
 router.get('/db-health', async (req, res) => {
   try {
-    await dbConnection.query('SELECT 1');
+    logger.info('Checking DB Health');
+    await dbConnection.query('SELECT 1', {
+        type: sequelize.QueryTypes.SELECT
+    });
 
     res.json({
       status: 'ok',
