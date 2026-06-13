@@ -9,7 +9,8 @@ const sequelize = new Sequelize(
     {
         host: process.env.DBHOST,
         port: process.env.DBPORT,
-        logging: false,
+        logging: (sql, timing) => logger.info({ sql, durationMs: timing }, 'Sequelize query'),
+        benchmark: true,
         timezone: 'Asia/Kolkata',
         dialect: 'postgres',
         searchPath: schemaName,
@@ -37,5 +38,6 @@ async function connectDatabase() {
 
 module.exports = {
     dbConnection: sequelize,
-    connectDatabase
+    connectDatabase,
+    sequelize
 }
