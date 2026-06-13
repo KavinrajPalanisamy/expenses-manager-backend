@@ -20,6 +20,7 @@ function requestTraceMiddleware(req, res, next) {
       completionLogged = true;
       logger.info(
         {
+          ipAddress: req.ip,
           method: req.method,
           url: req.originalUrl,
           statusCode: res.statusCode,
@@ -31,8 +32,11 @@ function requestTraceMiddleware(req, res, next) {
 
     logger.info(
       {
+        ipAddress: req.ip,
         method: req.method,
-        url: req.originalUrl
+        url: req.originalUrl,
+        statusCode: res.statusCode,
+        reqAt: startedAt
       },
       'Request received'
     );
