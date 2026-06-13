@@ -1,4 +1,5 @@
 const Sequelize = require('sequelize');
+const logger = require('../utils/logger');
 const schemaName = process.env.DBSCHEMA || 'expenseManager';
 
 const sequelize = new Sequelize(
@@ -25,8 +26,13 @@ const sequelize = new Sequelize(
 );
 
 async function connectDatabase() {
-    await sequelize.authenticate();
-    console.log('Connected with the database!');
+    try {
+        await sequelize.authenticate();
+        logger.info('Database connected');
+    } catch (error) {
+        logger.error(error, 'Unable to connect database');
+        throw error;
+    }
 }
 
 module.exports = {
