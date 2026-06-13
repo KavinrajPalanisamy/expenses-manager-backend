@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const logger = require('../utils/logger');
 
 const { dbConnection } = require('../config/dbConfig');
 
@@ -21,10 +22,11 @@ router.get('/db-health', async (req, res) => {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
+    logger.error(error, 'Unable to reach database');
     res.status(503).json({
       status: 'error',
       database: 'unreachable',
-      error: error.message,
+      error: 'Unable to reach database',
       timestamp: new Date().toISOString()
     });
   }

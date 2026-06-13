@@ -1,4 +1,14 @@
 require('dotenv').config({ quiet: true });
+const logger = require('./utils/logger');
+
+process.on('uncaughtException', (err) => {
+  logger.error(err, 'UNHANDLED EXCEPTION');
+});
+
+process.on('unhandledRejection', (err) => {
+  logger.error(err, 'UNHANDLED REJECTION');
+});
+
 const express = require('express');
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -14,7 +24,7 @@ const statusCheck = require('./routes/healthCheck');
 
 
 // Assign Routes Path
-app.use('/app', statusCheck);
+app.use('/', statusCheck);
 
 
 app.use((req, res) => {
@@ -26,10 +36,10 @@ async function startServer() {
     await connectDatabase();
 
     app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
+      logger.info({ port: PORT }, 'Server started');
     });
   } catch (error) {
-    console.error('Failed to start server:', error.message);
+    logger.error(error, 'Failed to start server');
     process.exit(1);
   }
 }
