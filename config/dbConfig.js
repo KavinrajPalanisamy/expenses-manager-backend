@@ -38,6 +38,5 @@ async function connectDatabase() {
 
 module.exports = {
     dbConnection: sequelize,
-    connectDatabase,
-    sequelize
+    connectDatabase
 }

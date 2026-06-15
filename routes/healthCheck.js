@@ -4,7 +4,7 @@ const logger = require('../utils/logger');
 
 const { dbConnection, sequelize } = require('../config/dbConfig');
 
-router.get("/health", (req, res) => {
+router.get("/server", (req, res) => {
   res.json({
     status: "ok",
     uptime: `${Math.floor(process.uptime())}s`,
@@ -12,7 +12,7 @@ router.get("/health", (req, res) => {
   });
 });
 
-router.get('/db-health', async (req, res) => {
+router.get('/db', async (req, res) => {
   try {
     logger.info('Checking DB Health');
     await dbConnection.query('SELECT 1', {
