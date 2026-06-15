@@ -1,5 +1,10 @@
 require('dotenv').config({ quiet: true });
+
 const logger = require('./utils/logger');
+const express = require('express');
+const helmet = require('helmet');
+const cors = require('cors');
+const requestTraceMiddleware = require('./middlewares/requestTrace');
 
 process.on('uncaughtException', (err) => {
   logger.error(err, 'UNHANDLED EXCEPTION');
@@ -9,14 +14,14 @@ process.on('unhandledRejection', (err) => {
   logger.error(err, 'UNHANDLED REJECTION');
 });
 
-const express = require('express');
 const app = express();
 const PORT = process.env.PORT || 3000;
-const requestTraceMiddleware = require('./middlewares/requestTrace');
 
+app.use(helmet());
+app.use(cors({ origin: '*' }));
 app.use(requestTraceMiddleware);
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
 const { connectDatabase } = require('./config/dbConfig');
 
@@ -26,7 +31,7 @@ const statusCheck = require('./routes/healthCheck');
 
 
 // Assign Routes Path
-app.use('/', statusCheck);
+app.use('/health', statusCheck);
 
 
 app.use((req, res) => {
@@ -47,6 +52,9 @@ app.use((error, req, res, next) => {
 
 async function startServer() {
   try {
+    if (!process.env.DBSCHEMA || !process.env.DBNAME || !process.env.DBUSER || !process.env.DBPASSWORD || !process.env.DBHOST || !process.env.DBPORT) {
+      throw new Error('Invalid Database Configuration');
+    }
     await connectDatabase();
 
     app.listen(PORT, () => {

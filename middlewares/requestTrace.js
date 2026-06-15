@@ -35,7 +35,6 @@ function requestTraceMiddleware(req, res, next) {
         ipAddress: req.ip,
         method: req.method,
         url: req.originalUrl,
-        statusCode: res.statusCode,
         reqAt: startedAt
       },
       'Request received'
