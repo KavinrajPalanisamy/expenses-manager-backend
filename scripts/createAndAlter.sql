@@ -1,3 +1,5 @@
+CREATE SCHEMA IF NOT EXISTS "expenseManager";
+
 CREATE TABLE "expenseManager".user_roles (
     role_id UUID DEFAULT gen_random_uuid() NOT NULL,
     role_name VARCHAR(50) NOT NULL,
