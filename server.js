@@ -28,10 +28,12 @@ const { connectDatabase } = require('./config/dbConfig');
 
 // Import Routes
 const statusCheck = require('./routes/healthCheck');
+const authRouter = require('./routes/auth');
 
 
 // Assign Routes Path
 app.use('/health', statusCheck);
+app.use('/auth', authRouter);
 
 
 app.use((req, res) => {

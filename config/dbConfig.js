@@ -1,6 +1,6 @@
 const Sequelize = require('sequelize');
 const logger = require('../utils/logger');
-const schemaName = process.env.DBSCHEMA || 'expenseManager';
+const schemaName = process.env.DBSCHEMA || 'expense_manager';
 
 const sequelize = new Sequelize(
     process.env.DBNAME,

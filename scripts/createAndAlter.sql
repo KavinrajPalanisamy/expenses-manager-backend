@@ -1,6 +1,6 @@
-CREATE SCHEMA IF NOT EXISTS "expenseManager";
+CREATE SCHEMA IF NOT EXISTS "expense_manager";
 
-CREATE TABLE "expenseManager".user_roles (
+CREATE TABLE "expense_manager".user_roles (
     role_id UUID DEFAULT gen_random_uuid() NOT NULL,
     role_name VARCHAR(50) NOT NULL,
     description VARCHAR(255),
@@ -9,7 +9,7 @@ CREATE TABLE "expenseManager".user_roles (
 );
 
 
-CREATE TABLE "expenseManager".user_credentials (
+CREATE TABLE "expense_manager".user_credentials (
 	user_id uuid DEFAULT gen_random_uuid() NOT NULL,
 	username varchar(100) NOT NULL,
 	email varchar(255) NOT NULL,
@@ -28,10 +28,10 @@ CREATE TABLE "expenseManager".user_credentials (
 	CONSTRAINT user_credentials_email_key UNIQUE (email),
 	CONSTRAINT user_credentials_pkey PRIMARY KEY (user_id),
 	CONSTRAINT user_credentials_username_key UNIQUE (username),
-	CONSTRAINT fk_user_credentials_role FOREIGN KEY (role_id) REFERENCES "expenseManager".user_roles(role_id)
+	CONSTRAINT fk_user_credentials_role FOREIGN KEY (role_id) REFERENCES "expense_manager".user_roles(role_id)
 );
 
-CREATE TABLE "expenseManager".password_history (
+CREATE TABLE "expense_manager".password_history (
     password_history_id UUID DEFAULT gen_random_uuid() NOT NULL,
     user_id UUID NOT NULL,
     last_password VARCHAR(255) NOT NULL,
@@ -39,5 +39,5 @@ CREATE TABLE "expenseManager".password_history (
     CONSTRAINT password_history_pkey PRIMARY KEY (password_history_id),
     CONSTRAINT fk_password_history_user
         FOREIGN KEY (user_id)
-        REFERENCES "expenseManager".user_credentials(user_id)
+        REFERENCES "expense_manager".user_credentials(user_id)
 );

@@ -1,0 +1,3 @@
+module.exports.ERROR_CODES = {
+    INVALID_CREDENTIAL: 'INVALID_CREDENTIAL'
+}
