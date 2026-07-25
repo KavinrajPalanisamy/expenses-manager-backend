@@ -1,6 +1,6 @@
 const Sequelize = require('sequelize');
 const logger = require('../utils/logger');
-const schemaName = process.env.DBSCHEMA || 'expenseManager';
+const schemaName = process.env.DBSCHEMA || 'expense_manager';
 
 const sequelize = new Sequelize(
     process.env.DBNAME,
@@ -13,10 +13,6 @@ const sequelize = new Sequelize(
         benchmark: true,
         timezone: 'Asia/Kolkata',
         dialect: 'postgres',
-        searchPath: schemaName,
-        dialectOptions: {
-            prependSearchPath: true
-        },
         pool: {
             max: 5,
             min: 0,
@@ -30,6 +26,7 @@ async function connectDatabase() {
     try {
         await sequelize.authenticate();
         logger.info('Database connected');
+        await sequelize.query(`ALTER DATABASE ${process.env.DBNAME} SET search_path = expense_manager;`);
     } catch (error) {
         logger.error(error, 'Unable to connect database');
         throw error;
