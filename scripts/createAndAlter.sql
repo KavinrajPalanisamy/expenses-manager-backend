@@ -41,3 +41,24 @@ CREATE TABLE "expense_manager".password_history (
         FOREIGN KEY (user_id)
         REFERENCES "expense_manager".user_credentials(user_id)
 );
+
+CREATE TABLE "expense_manager".session_details (
+    id UUID DEFAULT gen_random_uuid() NOT NULL,
+    user_id UUID NOT NULL,
+    is_active BOOLEAN DEFAULT true NOT NULL,
+    expire_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    last_used_at TIMESTAMP NULL,
+    revoked_at TIMESTAMP NULL,
+	revoked_reason VARCHAR(150) NULL,
+    ip_address VARCHAR(20) NULL,
+    os VARCHAR(25) null,
+    user_agent VARCHAR(255) NULL,
+    device_type VARCHAR(25) NULL,
+    refresh_token VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT id_pkey PRIMARY KEY (id),
+    CONSTRAINT fk_user_id
+        FOREIGN KEY (user_id)
+        REFERENCES "expense_manager".user_credentials(user_id)
+);
