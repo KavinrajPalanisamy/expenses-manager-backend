@@ -36,19 +36,17 @@ module.exports.authorise = async (req, res) => {
 
         let accessTokenData = { userId: userDetails.user_id, userName: userDetails.username, email: userDetails.email, firstName: userDetails.first_name, lastName: userDetails.last_name, displayName: userDetails.display_name };
         const accessToken = jwt.sign(accessTokenData, process.env.ACCESS_TOKEN_SECRET_KEY, { expiresIn: process.env.ACCESS_TOKEN_EXPIRY_TIME });
-        const refreshToken = jwt.sign({ userId: userDetails.user_id }, process.env.REFRESH_TOKEN_SECRET_KEY, { expiresIn: process.env.REFRESH_TOKEN_EXPIRY_TIME });
-
-        logger.info('Token Generated');
+        logger.info('Access Token Generated');
 
         const sessionData = {
             user_id: userDetails.user_id,
             is_active: true,
             expire_at: timestamps.addFromCurrentTime('24', 'hours'),
             last_used_at: timestamps.getCurrentTimestamp(),
-            ip_address: '192.168.1.1',
-            os: 'Dummy Os',
-            user_agent: req.headers['user-agent'],
-            device_type: 'Linux',
+            ip_address: req?.ip || req.socket.remoteAddress,
+            os: req.headers["x-os"],
+            user_agent: req.headers['x-browser'],
+            device_type: req.headers["x-device-type"],
             refresh_token: refreshToken,
             created_at: timestamps.getCurrentTimestamp(),
             updated_at: timestamps.getCurrentTimestamp()
@@ -59,6 +57,7 @@ module.exports.authorise = async (req, res) => {
             accessTokenData.sessionId = dbResponse.id;
         }
         logger.info('Session Generated');
+        const refreshToken = jwt.sign({ userId: userDetails.user_id, sessionId: dbResponse.id }, process.env.REFRESH_TOKEN_SECRET_KEY, { expiresIn: process.env.REFRESH_TOKEN_EXPIRY_TIME });
 
         res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: true, sameSite: 'strict' });
         logger.info('Access Token Generated - Sending Response');
@@ -108,7 +107,7 @@ module.exports.refreshToken = async (req, res) => {
 
         let isValidRefreshToken = verifyRefreshToken(req.cookies.refreshToken);
         if (isValidRefreshToken.statusCode) {
-            return res.status(isValidRefreshToken.statusCode).json({ message: isValidRefreshToken.message });
+            return res.status(isValidRefreshToken.statusCode).json({ message: isValidRefreshToken.message, code: isValidRefreshToken.code });
         }
 
         let userDetails = await sessionModel.getUserDetailsForAuth(req.body);
@@ -141,6 +140,7 @@ function verifyRefreshToken(token) {
         if (err.name === "TokenExpiredError") {
             return {
                 message: "Refresh token expired",
+                code: "REFRESH_TOKEN_EXPIRED",
                 statusCode: 401
             };
         }
@@ -148,12 +148,14 @@ function verifyRefreshToken(token) {
         if (err.name === "JsonWebTokenError") {
             return {
                 message: "Invalid refresh token",
+                code: "INVALID_REFRESH_TOKEN",
                 statusCode: 401
             };
         }
 
         return {
             message: "Something went wrong",
+            code: "SOMETHING_WENT_WRONG",
             statusCode: 500
         };
     }
