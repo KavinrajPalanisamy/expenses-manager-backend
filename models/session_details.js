@@ -53,7 +53,7 @@ const sessionDetails = dbConnection.define(
             allowNull: true,
         },
         refresh_token: {
-            type: DataTypes.STRING(255),
+            type: DataTypes.TEXT,
             allowNull: false,
         },
     },
@@ -77,15 +77,8 @@ module.exports.createRecord = async (data) => {
     return await sessionDetails.create(data, { returning: true });
 }
 
-module.exports.getUserDetailsForAuth = async (data) => {
-    let [userDetails] = await dbConnection.query(`select user_id, username, email, first_name, last_name, display_name, is_locked, current_password from user_credentials uc where is_active = true and (username = :username or email = :email)`, {
-        replacements: { username: data.userName || null, email: data.email },
-        type: dbConnection.QueryTypes.SELECT
-    });
-    if (userDetails) {
-        return userDetails;
-    }
-    return null;
+module.exports.updateRefreshToken = async (id, refreshToken) => {
+    return await sessionDetails.update({ refresh_token: refreshToken }, { where: { id } });
 }
 
 module.exports.terminateSessions = async (data) => {
