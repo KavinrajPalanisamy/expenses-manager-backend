@@ -31,11 +31,13 @@ const { connectDatabase } = require('./config/dbConfig');
 // Import Routes
 const statusCheck = require('./routes/healthCheck');
 const authRouter = require('./routes/auth');
+const userRouter = require('./routes/users');
 
 
 // Assign Routes Path
 app.use('/api/health', statusCheck);
 app.use('/api/auth', authRouter);
+app.use('/api/users', userRouter);
 
 
 app.use((req, res) => {

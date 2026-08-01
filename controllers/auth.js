@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 
 const { dbConnection } = require('../config/dbConfig');
 const sessionModel = require('../models/session_details');
+const userModel = require('../models/user_credentials');
 
 const { ERROR_CODES } = require('../utils/constants');
 const timestamps = require('../utils/timeStamps');
@@ -16,7 +17,7 @@ module.exports.authorise = async (req, res) => {
             return res.status(400).json({ message: 'Email/username and password are required' });
         }
 
-        let userDetails = await sessionModel.getUserDetailsForAuth(req.body);
+        let userDetails = await userModel.getUserData(req.body);
         if (!userDetails) {
             logger.info({ username: req.body.userName, email: req.body.email }, 'User not found');
             await bcrypt.compare('', '$2y$10$dU8iqmv7DjLY/SPymMQgf.lTHxtWyQHqYkIdwADT6vngqEQ8xrpLy');
@@ -47,17 +48,18 @@ module.exports.authorise = async (req, res) => {
             os: req.headers["x-os"],
             user_agent: req.headers['x-browser'],
             device_type: req.headers["x-device-type"],
-            refresh_token: refreshToken,
+            refresh_token: '',
             created_at: timestamps.getCurrentTimestamp(),
             updated_at: timestamps.getCurrentTimestamp()
         }
 
-        let dbResponse = await sessionModel.createRecord(sessionData);
-        if (dbResponse) {
-            accessTokenData.sessionId = dbResponse.id;
-        }
-        logger.info('Session Generated');
+        const dbResponse = await sessionModel.createRecord(sessionData);
+
         const refreshToken = jwt.sign({ userId: userDetails.user_id, sessionId: dbResponse.id }, process.env.REFRESH_TOKEN_SECRET_KEY, { expiresIn: process.env.REFRESH_TOKEN_EXPIRY_TIME });
+        await sessionModel.updateRefreshToken(dbResponse.id, refreshToken);
+
+        accessTokenData.sessionId = dbResponse.id;
+        logger.info('Session Generated');
 
         res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: true, sameSite: 'strict' });
         logger.info('Access Token Generated - Sending Response');
