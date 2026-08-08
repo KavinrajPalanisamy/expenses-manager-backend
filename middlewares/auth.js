@@ -35,3 +35,12 @@ module.exports.verifyRefreshToken = (req, res, next) => {
         next();
     })
 }
+
+module.exports.catchHandler = (functionName) => {
+    try {
+        
+    } catch (error) {
+        logger.error(error, 'Internal Server Error');
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
+}
