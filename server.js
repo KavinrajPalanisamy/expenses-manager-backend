@@ -1,5 +1,8 @@
 require('dotenv').config({ quiet: true });
 
+const { validateEnvs } = require('./middlewares/validators');
+validateEnvs();
+
 const logger = require('./utils/logger');
 const express = require('express');
 const helmet = require('helmet');
@@ -15,12 +18,14 @@ process.on('unhandledRejection', (err) => {
   logger.error(err, 'UNHANDLED REJECTION');
 });
 
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(helmet());
 app.use(cookieParser());
-app.use(cors({ origin: 'http://localhost:4200', credentials: true }));
+app.set('trust proxy', 1);
+app.use(cors({ origin: process.env.ALLOWED_SOURCES, credentials: true }));
 app.use(requestTraceMiddleware);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
@@ -58,9 +63,6 @@ app.use((error, req, res, next) => {
 
 async function startServer() {
   try {
-    if (!process.env.DBSCHEMA || !process.env.DBNAME || !process.env.DBUSER || !process.env.DBPASSWORD || !process.env.DBHOST || !process.env.DBPORT) {
-      throw new Error('Invalid Database Configuration');
-    }
     await connectDatabase();
 
     app.listen(PORT, () => {

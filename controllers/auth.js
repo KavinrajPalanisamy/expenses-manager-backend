@@ -55,7 +55,7 @@ module.exports.authorise = async (req, res) => {
 
         const dbResponse = await sessionModel.createRecord(sessionData);
 
-        const refreshToken = jwt.sign({ userId: userDetails.user_id, sessionId: dbResponse.id }, process.env.REFRESH_TOKEN_SECRET_KEY, { expiresIn: process.env.REFRESH_TOKEN_EXPIRY_TIME });
+        const refreshToken = jwt.sign({ userId: userDetails.user_id, sessionId: dbResponse.id, userName: userDetails.username, email: userDetails.email }, process.env.REFRESH_TOKEN_SECRET_KEY, { expiresIn: process.env.REFRESH_TOKEN_EXPIRY_TIME });
         await sessionModel.updateRefreshToken(dbResponse.id, refreshToken);
 
         accessTokenData.sessionId = dbResponse.id;
@@ -72,10 +72,14 @@ module.exports.authorise = async (req, res) => {
 
 module.exports.logOut = async (req, res) => {
     try {
-        if (!req.body.userId) {
+        if (!req.user.userId) {
             return res.status(400).json({ message: 'Valid User Id required' });
         }
-        await sessionModel.terminateSessions(req.body);
+        await sessionModel.terminateSessions({
+            userId: req.user.userId,
+            sessionId: req.user.sessionId,
+            revokeReason: req.body?.revokeReason || 'User logged out'
+        });
         res.clearCookie('refreshToken');
         return res.status(200).json({ message: 'Logged Successfully' });
     } catch (error) {
@@ -86,22 +90,24 @@ module.exports.logOut = async (req, res) => {
 
 module.exports.refreshToken = async (req, res) => {
     try {
-        if (!(req.body?.email || req.body?.userName)) {
-            logger.info(req.body, 'Invalid Request Body');
-            return res.status(400).json({ message: 'Email or username are required' });
+        if (!(req.user?.email || req.user?.userName)) {
+            logger.info(req.body, 'Invalid Token Data');
+            return res.status(400).json({ message: 'Email or username was missing from the token' });
         }
 
-        if (!req.body?.sessionId) {
+        if (!req.user?.sessionId) {
             logger.info(req.body, 'Invalid Session');
             return res.status(400).json({ message: 'Invalid Session' });
         }
 
-        if (!req?.cookies?.refreshToken) {
-            logger.info(req.body, 'Cookie Not Found');
-            return res.status(401).json({ message: 'Cookie Not Found' });
-        }
+        let reqBody = {
+            userName: req.user.userName,
+            email: req.user.email,
+            sessionId: req.user.sessionId,
+            userId: req.user.userId
+        };
 
-        let sessionDetails = await sessionModel.getSessionInfoUsingSessionId(req.body);
+        let sessionDetails = await sessionModel.getSessionInfoUsingSessionId(reqBody);
         if (!sessionDetails) {
             logger.info(req.body, 'Session Not Found in Database');
             return res.status(401).json({ code: ERROR_CODES.INVALID_SESSION, message: 'Session Not Found' });
@@ -112,21 +118,21 @@ module.exports.refreshToken = async (req, res) => {
             return res.status(isValidRefreshToken.statusCode).json({ message: isValidRefreshToken.message, code: isValidRefreshToken.code });
         }
 
-        let userDetails = await sessionModel.getUserDetailsForAuth(req.body);
+        let userDetails = await userModel.getUserData(reqBody);
         if (!userDetails) {
             logger.info({ username: req.body.userName, email: req.body.email }, 'User not found');
             return res.status(401).json({ code: ERROR_CODES.INVALID_CREDENTIAL, message: 'User Name or Password is incorrect' });
         }
 
         if (userDetails.is_locked) {
-            logger.info({ username: req.body.userName, email: req.body.email }, 'User is locked');
+            logger.info({ username: reqBody.userName, email: reqBody.email }, 'User is locked');
             return res.status(401).json({ code: ERROR_CODES.USER_LOCKED, message: 'User Locked! Kindly contact support team.' });
         }
 
-        let accessTokenData = { sessionId: req.body.sessionId, userId: userDetails.user_id, userName: userDetails.username, email: userDetails.email, firstName: userDetails.first_name, lastName: userDetails.last_name, displayName: userDetails.display_name };
+        let accessTokenData = { sessionId: req.user.sessionId, userId: userDetails.user_id, userName: userDetails.username, email: userDetails.email, firstName: userDetails.first_name, lastName: userDetails.last_name, displayName: userDetails.display_name };
         const accessToken = jwt.sign(accessTokenData, process.env.ACCESS_TOKEN_SECRET_KEY, { expiresIn: process.env.ACCESS_TOKEN_EXPIRY_TIME });
         logger.info('New Access Token Generated - Sending Response');
-        await sessionModel.updateSessions(req.body);
+        await sessionModel.updateSessions(reqBody);
         return res.status(200).json({ data: JSON.stringify(accessTokenData), accessToken: accessToken });
 
     } catch (error) {

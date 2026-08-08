@@ -32,16 +32,17 @@ module.exports.createUser = async (req, res) => {
         if (!req.body?.acceptTermsAndConditions) {
             errorLogs.push({ key: 'acceptTermsAndConditions', message: 'Kindly Accept the Terms and Conditions.', label: 'Terms and Conditions' });
         }
+        if (req.body?.password?.length < parseInt(process.env?.PASSWORD_LENGTH || '8')) {
+            errorLogs.push({ key: ['password', 'confirmPassword'], message: 'Password does not match.' });
+        }
+        if (req.body?.password !== req.body?.confirmPassword) {
+            errorLogs.push({ key: ['password', 'confirmPassword'], message: 'Password does not match.' });
+        }
 
         if (errorLogs.length) {
             let frameErrorMsg = errorLogs.map(msg => `${msg.label}: ${msg.message}\n`);
             logger.info(errorLogs, frameErrorMsg);
             return res.status(400).json({ message: frameErrorMsg, errors: errorLogs });
-        }
-        if (req.body.password !== req.body.confirmPassword) {
-            errorLogs.push({ key: ['password', 'confirmPassword'], message: 'Password does not match.' });
-            logger.info(errorLogs, 'Password does not match.');
-            return res.status(400).json({ message: 'Password does not match.', errors: errorLogs });
         }
 
         let data = {
