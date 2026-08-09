@@ -3,12 +3,13 @@ const moment = require('moment');
 
 const { ERROR_CODES } = require('../utils/constants');
 const timestamps = require('../utils/timeStamps');
+const AppError = require('../utils/AppError');
 const logger = require('../utils/logger');
 
 const userModel = require('../models/user_credentials');
 const authController = require('./auth');
 
-module.exports.createUser = async (req, res) => {
+module.exports.createUser = async (req, res, next) => {
     try {
         let errorLogs = [];
         if (!req.body?.firstName) {
@@ -41,8 +42,9 @@ module.exports.createUser = async (req, res) => {
 
         if (errorLogs.length) {
             let frameErrorMsg = errorLogs.map(msg => `${msg.label}: ${msg.message}\n`);
-            logger.info(errorLogs, frameErrorMsg);
-            return res.status(400).json({ message: frameErrorMsg, errors: errorLogs });
+            // logger.info(errorLogs, frameErrorMsg);
+            throw new AppError(400, frameErrorMsg, ERROR_CODES.INVALID_DATA);
+            // return res.status(400).json({ message: frameErrorMsg, errors: errorLogs });
         }
 
         let data = {
@@ -51,7 +53,6 @@ module.exports.createUser = async (req, res) => {
             display_name: req.body.displayName || '',
             username: req.body.userName,
             email: req.body.email,
-            role_id: '11298d45-e2ee-4622-9b4e-e6056df70c16',
             password_updated_at: timestamps.getCurrentTimestamp(),
             date_of_birth: moment(req.body.dateOfBirth).format('YYYY-MM-DD')
         }
@@ -62,17 +63,16 @@ module.exports.createUser = async (req, res) => {
         let user = await userModel.createUser(data);
         logger.info(`User created. User Id: ${user?.user_id || null}`);
 
-        await authController.authorise(req, res);
+        await authController.authorise(req, res, next);
     } catch (error) {
-        logger.error(error, 'Internal Server Error');
-        return res.status(500).json({ message: 'Internal Server Error' });
+        next(error);
     }
 }
 
-module.exports.checkUserNameExists = async (req, res) => {
+module.exports.checkUserNameExists = async (req, res, next) => {
     try {
         if (!req.query?.email && !req.query?.userName) {
-            return res.status(400).json({ key: 'email or username', message: 'Invalid Email or Username', label: 'Email or Username' });
+            throw new AppError(400, 'Invalid Email or Username', ERROR_CODES.INVALID_DATA);
         }
 
         let userExists = await userModel.getUserData(req.query);
@@ -81,7 +81,6 @@ module.exports.checkUserNameExists = async (req, res) => {
         }
         return res.status(200).json({ isUserExits: false, message: 'User not found' });
     } catch (error) {
-        logger.error(error, 'Internal Server Error');
-        return res.status(500).json({ message: 'Internal Server Error' });
+        next(error);
     }
 }

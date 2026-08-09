@@ -24,10 +24,6 @@ const userCredentials = dbConnection.define(
             type: DataTypes.STRING(255),
             allowNull: false,
         },
-        role_id: {
-            type: DataTypes.UUID,
-            allowNull: false,
-        },
         is_active: {
             type: DataTypes.BOOLEAN,
             allowNull: false,
@@ -77,13 +73,6 @@ const userCredentials = dbConnection.define(
         underscored: true,
     }
 );
-
-userCredentials.associate = (models) => {
-    userCredentials.belongsTo(models.UserRole, {
-        foreignKey: "role_id",
-        as: "role",
-    });
-};
 
 
 module.exports.createUser = async (data) => {

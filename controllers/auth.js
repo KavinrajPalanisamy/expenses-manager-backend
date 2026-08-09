@@ -6,33 +6,34 @@ const sessionModel = require('../models/session_details');
 const userModel = require('../models/user_credentials');
 
 const { ERROR_CODES } = require('../utils/constants');
+const AppError = require('../utils/AppError');
 const timestamps = require('../utils/timeStamps');
 const logger = require('../utils/logger');
 
 
-module.exports.authorise = async (req, res) => {
+module.exports.authorise = async (req, res, next) => {
     try {
         if (!(req.body?.email || req.body?.userName) || !req.body?.password) {
             logger.info('Invalid Request Body');
-            return res.status(400).json({ message: 'Email/username and password are required' });
+            throw new AppError(400, 'Email/username and password are required', ERROR_CODES.INVALID_CREDENTIAL);
         }
 
         let userDetails = await userModel.getUserData(req.body);
         if (!userDetails) {
             logger.info({ username: req.body.userName, email: req.body.email }, 'User not found');
             await bcrypt.compare('', '$2y$10$dU8iqmv7DjLY/SPymMQgf.lTHxtWyQHqYkIdwADT6vngqEQ8xrpLy');
-            return res.status(401).json({ code: ERROR_CODES.INVALID_CREDENTIAL, message: 'User Name or Password is incorrect' });
+            throw new AppError(401, 'User Name or Password is incorrect', ERROR_CODES.INVALID_CREDENTIAL);
         }
 
         if (userDetails.is_locked) {
             logger.info({ username: req.body.userName, email: req.body.email }, 'User is locked');
-            return res.status(401).json({ code: ERROR_CODES.USER_LOCKED, message: 'User Locked! Kindly contact support team.' });
+            throw new AppError(401, 'User Locked! Kindly contact support team.', ERROR_CODES.USER_LOCKED);
         }
 
         let isMatching = await bcrypt.compare(req.body.password, userDetails.current_password);
         if (!isMatching) {
             logger.info('Invalid Credentials');
-            return res.status(401).json({ code: ERROR_CODES.INVALID_CREDENTIAL, message: 'User Name or Password is incorrect' });
+            throw new AppError(401, 'User Name or Password is incorrect', ERROR_CODES.INVALID_CREDENTIAL);
         }
 
         let accessTokenData = { userId: userDetails.user_id, userName: userDetails.username, email: userDetails.email, firstName: userDetails.first_name, lastName: userDetails.last_name, displayName: userDetails.display_name };
@@ -65,15 +66,14 @@ module.exports.authorise = async (req, res) => {
         logger.info('Access Token Generated - Sending Response');
         return res.status(200).json({ data: JSON.stringify(accessTokenData), accessToken: accessToken });
     } catch (error) {
-        logger.error(error, 'Internal Server Error');
-        res.status(500).json({ message: 'Internal Server Error' });
+        next(error);
     }
 }
 
-module.exports.logOut = async (req, res) => {
+module.exports.logOut = async (req, res, next) => {
     try {
         if (!req.user.userId) {
-            return res.status(400).json({ message: 'Valid User Id required' });
+            throw new AppError(400, 'Invalid User Id', ERROR_CODES.INVALID_CREDENTIAL);
         }
         await sessionModel.terminateSessions({
             userId: req.user.userId,
@@ -83,21 +83,20 @@ module.exports.logOut = async (req, res) => {
         res.clearCookie('refreshToken');
         return res.status(200).json({ message: 'Logged Successfully' });
     } catch (error) {
-        logger.error(error, 'Internal Server Error');
-        res.status(500).json({ message: 'Internal Server Error' });
+        next(error);
     }
 }
 
-module.exports.refreshToken = async (req, res) => {
+module.exports.refreshToken = async (req, res, next) => {
     try {
         if (!(req.user?.email || req.user?.userName)) {
             logger.info(req.body, 'Invalid Token Data');
-            return res.status(400).json({ message: 'Email or username was missing from the token' });
+            throw new AppError(400, 'Email or username was missing from the token', ERROR_CODES.INVALID_TOKEN);
         }
 
         if (!req.user?.sessionId) {
             logger.info(req.body, 'Invalid Session');
-            return res.status(400).json({ message: 'Invalid Session' });
+            throw new AppError(400, 'Invalid Session', ERROR_CODES.INVALID_SESSION);
         }
 
         let reqBody = {
@@ -110,23 +109,23 @@ module.exports.refreshToken = async (req, res) => {
         let sessionDetails = await sessionModel.getSessionInfoUsingSessionId(reqBody);
         if (!sessionDetails) {
             logger.info(req.body, 'Session Not Found in Database');
-            return res.status(401).json({ code: ERROR_CODES.INVALID_SESSION, message: 'Session Not Found' });
+            throw new AppError(401, 'Session Not Found', ERROR_CODES.INVALID_SESSION);
         }
-
+        
         let isValidRefreshToken = verifyRefreshToken(req.cookies.refreshToken);
         if (isValidRefreshToken.statusCode) {
-            return res.status(isValidRefreshToken.statusCode).json({ message: isValidRefreshToken.message, code: isValidRefreshToken.code });
+            throw new AppError(isValidRefreshToken.statusCode, isValidRefreshToken.message, isValidRefreshToken.code);
         }
-
+        
         let userDetails = await userModel.getUserData(reqBody);
         if (!userDetails) {
             logger.info({ username: req.body.userName, email: req.body.email }, 'User not found');
-            return res.status(401).json({ code: ERROR_CODES.INVALID_CREDENTIAL, message: 'User Name or Password is incorrect' });
+            throw new AppError(401, 'User Name or Password is incorrect', ERROR_CODES.INVALID_CREDENTIAL);
         }
-
+        
         if (userDetails.is_locked) {
             logger.info({ username: reqBody.userName, email: reqBody.email }, 'User is locked');
-            return res.status(401).json({ code: ERROR_CODES.USER_LOCKED, message: 'User Locked! Kindly contact support team.' });
+            throw new AppError(401, 'User Locked! Kindly contact support.', ERROR_CODES.USER_LOCKED);
         }
 
         let accessTokenData = { sessionId: req.user.sessionId, userId: userDetails.user_id, userName: userDetails.username, email: userDetails.email, firstName: userDetails.first_name, lastName: userDetails.last_name, displayName: userDetails.display_name };
@@ -136,8 +135,7 @@ module.exports.refreshToken = async (req, res) => {
         return res.status(200).json({ data: JSON.stringify(accessTokenData), accessToken: accessToken });
 
     } catch (error) {
-        logger.error(error, 'Internal Server Error');
-        res.status(500).json({ message: 'Internal Server Error' });
+        next(error);
     }
 }
 
