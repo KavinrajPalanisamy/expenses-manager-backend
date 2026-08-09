@@ -1,20 +1,10 @@
 CREATE SCHEMA IF NOT EXISTS "expense_manager";
 
-CREATE TABLE "expense_manager".user_roles (
-    role_id UUID DEFAULT gen_random_uuid() NOT NULL,
-    role_name VARCHAR(50) NOT NULL,
-    description VARCHAR(255),
-    CONSTRAINT user_roles_pkey PRIMARY KEY (role_id),
-    CONSTRAINT user_roles_role_name_key UNIQUE (role_name)
-);
-
-
-CREATE TABLE "expense_manager".user_credentials (
+CREATE TABLE expense_manager.user_credentials (
 	user_id uuid DEFAULT gen_random_uuid() NOT NULL,
 	username varchar(100) NOT NULL,
 	email varchar(255) NOT NULL,
 	current_password varchar(255) NOT NULL,
-	role_id uuid NOT NULL,
 	is_active bool DEFAULT true NOT NULL,
 	is_locked bool DEFAULT false NOT NULL,
 	failed_login_attempts int4 DEFAULT 0 NOT NULL,
@@ -25,11 +15,10 @@ CREATE TABLE "expense_manager".user_credentials (
 	first_name varchar(50) NOT NULL,
 	last_name varchar(50) DEFAULT ''::character varying NULL,
 	display_name varchar(24) NULL,
-	date_of_birth date NOT NULL,
+	date_of_birth date NULL,
 	CONSTRAINT user_credentials_email_key UNIQUE (email),
 	CONSTRAINT user_credentials_pkey PRIMARY KEY (user_id),
-	CONSTRAINT user_credentials_username_key UNIQUE (username),
-	CONSTRAINT fk_user_credentials_role FOREIGN KEY (role_id) REFERENCES "expense_manager".user_roles(role_id)
+	CONSTRAINT user_credentials_username_key UNIQUE (username)
 );
 
 CREATE TABLE "expense_manager".password_history (

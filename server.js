@@ -12,10 +12,12 @@ const cookieParser = require('cookie-parser');
 
 process.on('uncaughtException', (err) => {
   logger.error(err, 'UNHANDLED EXCEPTION');
+  console.error(err);
 });
 
 process.on('unhandledRejection', (err) => {
   logger.error(err, 'UNHANDLED REJECTION');
+  console.error(err);
 });
 
 
@@ -45,20 +47,11 @@ app.use('/api/auth', authRouter);
 app.use('/api/users', userRouter);
 
 
+const { errorHandler } = require("./middlewares/errorHandler");
+app.use(errorHandler);
+
 app.use((req, res) => {
   res.status(404).json({ error: 'Not found' });
-});
-
-app.use((error, req, res, next) => {
-  logger.error(error, 'Unhandled request error');
-
-  if (res.headersSent) {
-    return next(error);
-  }
-
-  res.status(500).json({
-    error: process.env.ENV_CONFIG === 'PROD' ? 'Internal server error' : error.message
-  });
 });
 
 async function startServer() {
