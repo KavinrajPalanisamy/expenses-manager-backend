@@ -37,7 +37,7 @@ module.exports.authorise = async (req, res, next) => {
         }
 
         let accessTokenData = { userId: userDetails.user_id, userName: userDetails.username, email: userDetails.email, firstName: userDetails.first_name, lastName: userDetails.last_name, displayName: userDetails.display_name };
-        const accessToken = jwt.sign(accessTokenData, process.env.ACCESS_TOKEN_SECRET_KEY, { expiresIn: process.env.ACCESS_TOKEN_EXPIRY_TIME });
+        const accessToken = jwt.sign(accessTokenData, process.env.ACCESS_TOKEN_SECRET_KEY, { expiresIn: !req.body.keepSignedIn ? process.env.ACCESS_TOKEN_EXPIRY_TIME : process.env.REFRESH_TOKEN_EXPIRY_TIME});
         logger.info('Access Token Generated');
 
         const sessionData = {
@@ -64,7 +64,7 @@ module.exports.authorise = async (req, res, next) => {
 
         res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: true, sameSite: 'strict' });
         logger.info('Access Token Generated - Sending Response');
-        return res.status(200).json({ data: JSON.stringify(accessTokenData), accessToken: accessToken });
+        return res.status(200).json({ data: JSON.stringify(accessTokenData), accessToken: accessToken, message: 'Logged in successfully.' });
     } catch (error) {
         next(error);
     }
@@ -81,7 +81,7 @@ module.exports.logOut = async (req, res, next) => {
             revokeReason: req.body?.revokeReason || 'User logged out'
         });
         res.clearCookie('refreshToken');
-        return res.status(200).json({ message: 'Logged Successfully' });
+        return res.status(200).json({ message: 'Logged out successfully.' });
     } catch (error) {
         next(error);
     }
