@@ -119,3 +119,38 @@ CREATE INDEX provider_type_id_idx ON expense_manager.provider_types USING btree 
 CREATE INDEX provider_type_provider_type_idx ON expense_manager.provider_types USING btree (provider_type);
 
 
+CREATE TABLE expense_manager.menu (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	menu_key varchar(100) NOT NULL,
+	display_label varchar(100) NOT NULL,
+	description varchar(200) NULL,
+	created_at timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	updated_at timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	is_active bool DEFAULT true NOT NULL,
+	icon varchar(100) NULL,
+	order_no numeric NOT NULL,
+	CONSTRAINT menu_pk PRIMARY KEY (id),
+	CONSTRAINT menu_unique UNIQUE (menu_key),
+	CONSTRAINT menu_unique_1 UNIQUE (order_no)
+);
+
+
+CREATE TABLE expense_manager.sub_menu (
+	id uuid DEFAULT gen_random_uuid() NOT NULL,
+	menu_id uuid NOT NULL,
+	sub_menu_key varchar(100) NOT NULL,
+	display_label varchar(100) NOT NULL,
+	description varchar(200) NULL,
+	created_at timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	updated_at timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	is_active bool DEFAULT true NULL,
+	icon varchar(100) NULL,
+	order_no numeric NULL,
+	CONSTRAINT sub_menu_pk PRIMARY KEY (id),
+	CONSTRAINT sub_menu_unique UNIQUE (sub_menu_key),
+	CONSTRAINT sub_menu_unique_1 UNIQUE (display_label),
+	CONSTRAINT sub_menu_unique_2 UNIQUE (order_no),
+	CONSTRAINT fk_menu_id FOREIGN KEY (menu_id) REFERENCES expense_manager.menu(id)
+);
+
+
