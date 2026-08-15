@@ -39,12 +39,14 @@ const { connectDatabase } = require('./config/dbConfig');
 const statusCheck = require('./routes/healthCheck');
 const authRouter = require('./routes/auth');
 const userRouter = require('./routes/users');
+const menuRouter = require('./routes/menu');
 
 
 // Assign Routes Path
 app.use('/api/health', statusCheck);
 app.use('/api/auth', authRouter);
 app.use('/api/users', userRouter);
+app.use('/api/menu', menuRouter);
 
 
 const { errorHandler } = require("./middlewares/errorHandler");
