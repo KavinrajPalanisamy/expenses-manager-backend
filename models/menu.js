@@ -38,6 +38,11 @@ const Menu = dbConnection.define(
             allowNull: false,
             defaultValue: true,
         },
+        url: {
+            type: DataTypes.STRING,
+            allowNull: true,
+            defaultValue: true,
+        },
     },
     {
         tableName: "menu",
@@ -94,6 +99,11 @@ const SubMenu = dbConnection.define(
             allowNull: true,
             defaultValue: true,
         },
+        url: {
+            type: DataTypes.STRING,
+            allowNull: true,
+            defaultValue: true,
+        },
     },
     {
         tableName: "sub_menu",
@@ -141,8 +151,8 @@ module.exports.getMenuAndSubMenu = async () => {
 }
 
 module.exports.getSubMenuGroupWithMenu = async () => {
-    const subMenuGroupWithMenuData = await dbConnection.query(`select id, menu_key, display_label, description, icon,
-    (select json_agg(jsonb_build_object('id', sm.id,'sub_menu_key', sm.sub_menu_key,'display_label', sm.display_label,'description', sm.description, 'icon', sm.icon) order by sm.order_no asc) from sub_menu sm where sm.menu_id = m.id and sm.is_active = true)::jsonb as sub_menu_items
+    const subMenuGroupWithMenuData = await dbConnection.query(`select id, menu_key, display_label, description, icon, m.url,
+    (select json_agg(jsonb_build_object('id', sm.id,'sub_menu_key', sm.sub_menu_key,'display_label', sm.display_label,'description', sm.description, 'icon', sm.icon, 'url', sm.url) order by sm.order_no asc) from sub_menu sm where sm.menu_id = m.id and sm.is_active = true)::jsonb as sub_menu_items
     from menu m where m.is_active = true order by order_no asc;`, {
         type: dbConnection.QueryTypes.SELECT
     });
