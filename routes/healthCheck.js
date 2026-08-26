@@ -6,9 +6,10 @@ const { healthCheckLimiter } = require('../middlewares/rateLimiters');
 const { dbConnection } = require('../config/dbConfig');
 const { ERROR_CODES } = require('../utils/constants');
 const AppError = require('../utils/AppError');
+const { sendRsp } = require('../middlewares/response');
 
 router.get("/server", healthCheckLimiter, (req, res) => {
-  res.json({
+  return sendRsp(res, 200, '', 'Server online', {
     status: "ok",
     uptime: `${Math.floor(process.uptime())}s`,
     timestamp: new Date().toISOString()
@@ -19,10 +20,10 @@ router.get('/db', healthCheckLimiter, async (req, res, next) => {
   try {
     logger.info('Checking DB Health');
     await dbConnection.query('SELECT 1', {
-        type: dbConnection.QueryTypes.SELECT
+      type: dbConnection.QueryTypes.SELECT
     });
 
-    res.json({
+    return sendRsp(res, 200, '', 'Database online', {
       status: 'ok',
       database: 'reachable',
       timestamp: new Date().toISOString()

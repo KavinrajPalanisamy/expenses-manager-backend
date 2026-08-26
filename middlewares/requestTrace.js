@@ -24,7 +24,10 @@ function requestTraceMiddleware(req, res, next) {
           method: req.method,
           url: req.originalUrl,
           statusCode: res.statusCode,
-          durationMs: Date.now() - startedAt
+          durationMs: Date.now() - startedAt,
+          req_body: req?.body || {},
+          req_params: req?.params || {},
+          req_query: req?.query || {}
         },
         message
       );
@@ -35,7 +38,10 @@ function requestTraceMiddleware(req, res, next) {
         ipAddress: req.ip,
         method: req.method,
         url: req.originalUrl,
-        reqAt: startedAt
+        reqAt: startedAt,
+        req_body: req?.body || {},
+        req_params: req?.params || {},
+        req_query: req?.query || {}
       },
       'Request received'
     );

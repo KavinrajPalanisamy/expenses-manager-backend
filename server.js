@@ -28,9 +28,9 @@ app.use(helmet());
 app.use(cookieParser());
 app.set('trust proxy', 1);
 app.use(cors({ origin: process.env.ALLOWED_SOURCES, credentials: true }));
-app.use(requestTraceMiddleware);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
+app.use(requestTraceMiddleware);
 
 const { connectDatabase } = require('./config/dbConfig');
 
@@ -40,6 +40,7 @@ const statusCheck = require('./routes/healthCheck');
 const authRouter = require('./routes/auth');
 const userRouter = require('./routes/users');
 const menuRouter = require('./routes/menu');
+const accountsRouter = require('./routes/accounts');
 
 
 // Assign Routes Path
@@ -47,6 +48,7 @@ app.use('/api/health', statusCheck);
 app.use('/api/auth', authRouter);
 app.use('/api/users', userRouter);
 app.use('/api/menu', menuRouter);
+app.use('/api/accounts', accountsRouter);
 
 
 const { errorHandler } = require("./middlewares/errorHandler");

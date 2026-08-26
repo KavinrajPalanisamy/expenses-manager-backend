@@ -236,4 +236,6 @@ CREATE INDEX transactions_category_id_idx ON expense_manager.transactions USING 
 CREATE INDEX transactions_transfer_group_idx ON expense_manager.transactions USING btree (transfer_group_id);
 CREATE INDEX transactions_transaction_on_idx ON expense_manager.transactions USING btree (transaction_on);
 
+ALTER TABLE expense_manager.providers ADD logo bytea NULL;
+ALTER TABLE expense_manager.accounts ADD is_default bool NULL;
 
