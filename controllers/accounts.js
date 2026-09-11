@@ -22,7 +22,10 @@ module.exports.getAccounts = async (req, res, next) => {
         if (!req.user?.userId) {
             throw new AppError(400, 'Invalid Request', ERROR_CODES.INVALID_DATA);
         }
-        let accountData = await accountsModel.getAllAccountsByUserId({ userId: req.user.userId });
+        if (!req.params?.accountType) {
+            req.params.accountType = 'ALL';
+        }
+        let accountData = await accountsModel.getAllAccountsByUserId({ userId: req.user.userId, accountType: req.params.accountType.toUpperCase() });
         return sendRsp(res, 200, '', '', accountData);
     } catch (error) {
         next(error);

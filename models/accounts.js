@@ -108,12 +108,12 @@ module.exports.getAllAccountsByUserId = async (req) => {
         select a.id, a.account_name, a.account_holder_name, '•••• ' || a.account_number as account_number, (coalesce(a.opening_balance_minor, 0)/100)::numeric(15,2) as account_balance, a.currency, a.is_active, a.expire_on, a.created_at, a.updated_at,
         t.description, t.account_type, p.provider_name, p.logo, a.is_default, a.account_provider_id, a.account_type_id
         from accounts a
-        join account_types t on t.id = a.account_type_id
+        join account_types t on t.id = a.account_type_id and t.is_active = true and t.account_category_id in (select ac.id from account_category ac where ${req.accountType == 'ALL' ? 'ac.account_category is not null' : 'UPPER(ac.account_category) = :accountType' })
         join providers p on p.id = a.account_provider_id
         where a.user_id = :userId
         order by a.updated_at desc;`, {
         type: dbConnection.QueryTypes.SELECT,
-        replacements: { userId: req.userId }
+        replacements: { userId: req.userId, accountType: req.accountType }
     });
     return data?.length ? data : null;
 }
@@ -132,4 +132,12 @@ module.exports.updateAccountDetails = async(updateData, whereCondition) => {
         updateData['opening_balance_minor'] = updateData.opening_balance_minor * 100;
     }
     await Account.update(updateData, whereCondition);
+}
+
+module.exports.getAccountCategory = async (req) => {
+    const data = await dbConnection.query(`select id, account_category from account_category ac where is_active = true and UPPER(account_category) = UPPER(:accountCategory)`, {
+        type: dbConnection.QueryTypes.SELECT,
+        replacements: { accountCategory: req }
+    })
+    return data?.length ? data : null;
 }
